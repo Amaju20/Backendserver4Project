@@ -3,14 +3,15 @@ import { signToken, sendTokenCookie } from '../utils/generateToken.js';
 
 export const signup = async (req, res, next) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, username, email, password } = req.body;
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
     if (existingUser) {
-      return res.status(409).json({ message: 'Email is already in use' });
+      const field = existingUser.email === email ? 'Email' : 'Username';
+      return res.status(409).json({ message: `${field} is already in use` });
     }
 
-    const user = await User.create({ name, email, password });
+    const user = await User.create({ name, username, email, password });
 
     const token = signToken(user._id);
     sendTokenCookie(res, token);
@@ -23,11 +24,15 @@ export const signup = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
+    const { identifier, password } = req.body;
+    const normalized = identifier.toLowerCase();
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.findOne({
+      $or: [{ email: normalized }, { username: normalized }],
+    }).select('+password');
+
     if (!user || !(await user.comparePassword(password))) {
-      return res.status(401).json({ message: 'Invalid email or password' });
+      return res.status(401).json({ message: 'Invalid credentials' });
     }
 
     const token = signToken(user._id);
@@ -40,7 +45,11 @@ export const login = async (req, res, next) => {
 };
 
 export const logout = (req, res) => {
-  res.clearCookie('token');
+  res.clearCookie('token', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+  });
   res.status(200).json({ message: 'Logged out successfully' });
 };
 
