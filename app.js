@@ -10,6 +10,11 @@ connectDB();
 
 const app = express();
 
+// Trust the first hop of any reverse proxy (Vercel, Render, etc.) so
+// express-rate-limit sees the real client IP via X-Forwarded-For instead
+// of the proxy's own IP.
+app.set('trust proxy', 1);
+
 app.use(cors({ origin: process.env.CLIENT_URL, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());

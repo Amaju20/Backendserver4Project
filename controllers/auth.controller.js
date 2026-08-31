@@ -4,10 +4,14 @@ import { signToken, sendTokenCookie } from '../utils/generateToken.js';
 export const signup = async (req, res, next) => {
   try {
     const { name, username, email, password } = req.body;
+    const normalizedEmail = email.toLowerCase();
+    const normalizedUsername = username.toLowerCase();
 
-    const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+    const existingUser = await User.findOne({
+      $or: [{ email: normalizedEmail }, { username: normalizedUsername }],
+    });
     if (existingUser) {
-      const field = existingUser.email === email ? 'Email' : 'Username';
+      const field = existingUser.email === normalizedEmail ? 'Email' : 'Username';
       return res.status(409).json({ message: `${field} is already in use` });
     }
 
