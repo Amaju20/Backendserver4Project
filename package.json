@@ -4,6 +4,9 @@
   "description": "Backend API for Techverse 2026 — JWT auth, account settings, and RSVP persistence",
   "type": "module",
   "main": "app.js",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "start": "node app.js",
     "dev": "nodemon app.js",
